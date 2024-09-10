@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using JetBrains.Annotations;
 using UnityEngine;
 
 public class GirlScript : MonoBehaviour
@@ -21,6 +22,9 @@ public class GirlScript : MonoBehaviour
     private Rigidbody2D rb;
     private Vector2 movement;
     [SerializeField] private float minDistance = 0.5f;
+    private float Cooldown = -0.1f;
+    private float objectiveTime;
+    private bool lockObjective;
 
     // Start is called before the first frame update
     void Start()
@@ -44,16 +48,27 @@ public class GirlScript : MonoBehaviour
             if(objective == null){
                 FindObjective();
                 Stop();
+                objectiveTime = Time.time + 2.0f;
+                lockObjective = false;
             }
             else{
 
-                distance = Vector2.Distance(this.transform.position, objective.transform.position);
-                if(distance > minDistance){
-                    Move();
+                if(Cooldown < 0){    
+                    distance = Vector2.Distance(this.transform.position, objective.transform.position);
+                    if(distance > minDistance){
+                        Move();
+                        attackTime = Time.time + 0.5f;
+                    }
+                    else{
+                        Attack();
+                    }
                 }
                 else{
-                    Attack();
+                    Cooldown -= Time.deltaTime;
                 }
+            }
+            if(objectiveTime <= Time.time && !lockObjective){
+                objective = null;
             }
         }
     }
@@ -121,15 +136,20 @@ public class GirlScript : MonoBehaviour
     private void Attack(){
         //If enough time has passed --> attack
         if(attackTime <= Time.time){
+            lockObjective = true;
             objective.TakeDamage(this.strength, transform.position);
             //Start the attack cooldown
             attackTime = Time.time + attackCooldown;
+            Cooldown = 0.7f;
         }
 
     }
 
     public void TakeDamage(float damage, Vector2 origin){
+        lockObjective = false;
+        objectiveTime = Time.time + 0.5f;
         health -= damage;
+        //StartCoroutine(ChangeColor());  // Change color when taking damage
         GetKnockBack(origin);
         if(health <= 0){
             Die();
@@ -138,10 +158,24 @@ public class GirlScript : MonoBehaviour
 
     private void GetKnockBack(Vector2 origin){
         Vector2 knockbackDirection = (transform.position - (Vector3)origin).normalized;
-        float knockbackForce = 10;
+        float knockbackForce = 5;
 
         // Apply the force to the Rigidbody2D
         rb.AddForce(knockbackDirection * knockbackForce, ForceMode2D.Impulse);
+        if(Cooldown > 0){
+            Cooldown = Cooldown + 0.2f;
+        }
+        else{
+            Cooldown = 1.0f;
+        }
+    }
+
+    private IEnumerator ChangeColor(){
+        SpriteRenderer renderer = GetComponent<SpriteRenderer>();
+        Color originalColor = renderer.color;
+        renderer.color = Color.red;
+        yield return new WaitForSeconds(0.5f);
+        renderer.color = originalColor;
     }
 
     private void Die(){

@@ -27,11 +27,11 @@ public class GrilsManagerScript : MonoBehaviour
 
     private void InitializeGirls(){
         foreach(GirlScript girl in teamA){
-            girl.Initialize(10, 1, 0.3f, 5, "TeamA");
+            girl.Initialize(7, 1, 0.3f, 2, "TeamA");
         }
         
         foreach(GirlScript girl in teamB){
-            girl.Initialize(8, 2, 0.4f, 3.5f, "TeamB");
+            girl.Initialize(7, 1, 0.3f, 2f, "TeamB");
         }
     }
 }

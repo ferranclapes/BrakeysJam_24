@@ -2,20 +2,24 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using JetBrains.Annotations;
+using UnityEditor;
 using UnityEngine;
 
 public class GirlScript : MonoBehaviour
 {
     [SerializeField] private float maxHealth = -1f;
     [SerializeField] private float health;
+    private float damageMulitplier = 1f;
     [SerializeField] private float strength;
     [SerializeField] private float attackCooldown;
     private float attackTime;
+    private float missingChance = 0.0f;
     [SerializeField] private float speed;
     public string side;
 
     private GirlScript objective = null;
     private float distance;
+    private PulsingScript pulsing;
 
 
     //For movement:
@@ -30,6 +34,7 @@ public class GirlScript : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        pulsing = this.GetComponent<PulsingScript>();
     }
 
     public void Initialize(float h, float s, float at, float sp, string si){
@@ -137,7 +142,9 @@ public class GirlScript : MonoBehaviour
         //If enough time has passed --> attack
         if(attackTime <= Time.time){
             lockObjective = true;
-            objective.TakeDamage(this.strength, transform.position);
+            if(Random.Range(0, 100) > missingChance){
+                objective.TakeDamage(this.strength, transform.position);
+            }
             //Start the attack cooldown
             attackTime = Time.time + attackCooldown;
             Cooldown = 0.7f;
@@ -148,7 +155,7 @@ public class GirlScript : MonoBehaviour
     public void TakeDamage(float damage, Vector2 origin){
         lockObjective = false;
         objectiveTime = Time.time + 0.5f;
-        health -= damage;
+        health -= damage * damageMulitplier;
         //StartCoroutine(ChangeColor());  // Change color when taking damage
         GetKnockBack(origin);
         if(health <= 0){
@@ -181,6 +188,34 @@ public class GirlScript : MonoBehaviour
     private void Die(){
         //Destroy the game object
         Destroy(this.gameObject);
+    }
+
+    public void Highlight(){
+        pulsing.StartPulsing();
+    }
+    public void StopHighlight(){
+        pulsing.StopPulsing();
+    }
+
+    public void TakeEffect(string effect, float amount){
+        switch(effect){
+            case "multiplier":
+                damageMulitplier += amount;
+                break;
+            case "damage":
+                health -= health*amount;
+                break;
+            case "attackTime":
+                attackCooldown += attackCooldown * amount;
+                break;
+            case "strenght":
+                strength += strength * amount;
+                break;
+            case "missing":
+                missingChance = amount;
+                break;
+                
+        }
     }
 
 }
